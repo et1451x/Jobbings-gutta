@@ -35,5 +35,4 @@ osv
 
 resultat
 
-
-
+![Eksempel på resultat](script-for-skagen/hente-info-om-kunder/resultat.png)
