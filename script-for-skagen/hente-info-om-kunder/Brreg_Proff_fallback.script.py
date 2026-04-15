@@ -18,6 +18,7 @@ except ImportError:
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import numbers
+from openpyxl.worksheet.table import Table, TableStyleInfo
 
 DEFAULT_TIMEOUT = 20
 
@@ -126,6 +127,33 @@ def _extract_phone_from_html(html):
     return ""
 
 
+_KOMMUNENR_PREFIX_TO_FYLKE = {
+    "03": "Oslo",
+    "11": "Rogaland",
+    "15": "Møre og Romsdal",
+    "18": "Nordland",
+    "31": "Østfold",
+    "32": "Akershus",
+    "33": "Buskerud",
+    "34": "Innlandet",
+    "39": "Vestfold",
+    "40": "Telemark",
+    "42": "Agder",
+    "46": "Vestland",
+    "50": "Trøndelag",
+    "55": "Troms",
+    "56": "Finnmark",
+}
+
+
+def _kommunenr_to_fylke(kommunenr):
+    """Map kommunenummer (first 2 digits) to fylke name (2024 structure)."""
+    if not kommunenr or len(kommunenr) < 2:
+        return ""
+    prefix = kommunenr[:2]
+    return _KOMMUNENR_PREFIX_TO_FYLKE.get(prefix, "")
+
+
 def _extract_address_from_brreg(orgnr, timeout):
     """Fetch address from Brreg API (structured JSON)."""
     url = f"https://data.brreg.no/enhetsregisteret/api/enheter/{orgnr}"
@@ -135,7 +163,9 @@ def _extract_address_from_brreg(orgnr, timeout):
     adresse = ", ".join(a for a in adresse_lines if a) if adresse_lines else ""
     postnr = safe(adr.get("postnummer"))
     poststed = safe(adr.get("poststed"))
-    return adresse, postnr, poststed
+    kommunenr = safe(adr.get("kommunenummer"))
+    fylke = _kommunenr_to_fylke(kommunenr)
+    return adresse, postnr, poststed, fylke
 
 
 def fetch_proff_phone(orgnr, timeout):
@@ -279,7 +309,7 @@ def fetch_primary_contact(orgnr, timeout):
         except Exception:
             pass
 
-    telefon, adresse, postnr, poststed = "", "", "", ""
+    telefon, adresse, postnr, poststed, fylke = "", "", "", "", ""
     try:
         if proff_html:
             telefon = _extract_phone_from_html(proff_html)
@@ -289,13 +319,13 @@ def fetch_primary_contact(orgnr, timeout):
         pass
 
     try:
-        adresse, postnr, poststed = _extract_address_from_brreg(orgnr, timeout)
+        adresse, postnr, poststed, fylke = _extract_address_from_brreg(orgnr, timeout)
     except Exception:
         pass
 
     sum_kasse_bank, sum_investeringer = fetch_proff_regnskap(orgnr, timeout)
 
-    return name, role, telefon, adresse, postnr, poststed, regnskapsforer, sum_kasse_bank, sum_investeringer
+    return name, role, telefon, adresse, postnr, poststed, fylke, regnskapsforer, sum_kasse_bank, sum_investeringer
 
 
 def set_hyperlink(cell, text, url):
@@ -340,6 +370,7 @@ def main():
         "Adresse",
         "Postnr",
         "Poststed",
+        "Fylke",
         "Regnskapsfører",
         "Sum Kasse/Bank/Post",
         "Sum investeringer",
@@ -355,40 +386,52 @@ def main():
         selskap = safe(row[0] if len(row) > 0 else "")
         orgnr = safe(row[1] if len(row) > 1 else "")
 
-        navn, rolle, telefon, adresse, postnr, poststed, regnskapsforer = "", "", "", "", "", "", ""
+        navn, rolle, telefon, adresse, postnr, poststed, fylke, regnskapsforer = "", "", "", "", "", "", "", ""
         sum_kasse_bank, sum_investeringer = None, None
 
         if orgnr:
-            navn, rolle, telefon, adresse, postnr, poststed, regnskapsforer, sum_kasse_bank, sum_investeringer = fetch_primary_contact(orgnr, args.timeout)
+            navn, rolle, telefon, adresse, postnr, poststed, fylke, regnskapsforer, sum_kasse_bank, sum_investeringer = fetch_primary_contact(orgnr, args.timeout)
 
-        out_ws.append([selskap, orgnr, navn, rolle, telefon, adresse, postnr, poststed, regnskapsforer, sum_kasse_bank, sum_investeringer, "Proff", "1881", "LinkedIn"])
+        out_ws.append([selskap, orgnr, navn, rolle, telefon, adresse, postnr, poststed, fylke, regnskapsforer, sum_kasse_bank, sum_investeringer, "Proff", "1881", "LinkedIn"])
         r = out_ws.max_row
 
         # Format financial columns as accounting
         ACCT_FMT = '#,##0 kr;-#,##0 kr'
-        for col in (10, 11):
+        for col in (11, 12):
             cell = out_ws.cell(r, col)
             if cell.value is not None:
                 cell.number_format = ACCT_FMT
 
         if orgnr:
             set_hyperlink(
-                out_ws.cell(r, 12),
+                out_ws.cell(r, 13),
                 "Proff",
                 f"https://www.proff.no/bransjes%C3%B8k?q={orgnr}",
             )
 
         if navn:
             q = quote_plus(navn)
-            set_hyperlink(out_ws.cell(r, 13), "1881", f"https://www.1881.no/?query={q}")
+            set_hyperlink(out_ws.cell(r, 14), "1881", f"https://www.1881.no/?query={q}")
             set_hyperlink(
-                out_ws.cell(r, 14),
+                out_ws.cell(r, 15),
                 "LinkedIn",
                 f"https://www.linkedin.com/search/results/all/?keywords={q}",
             )
 
         if tqdm is None:
             print(f"{i}/{total} ferdig")
+
+    # Enable auto-filter on header row
+    out_ws.auto_filter.ref = out_ws.dimensions
+
+    # Auto-fit column widths
+    for col in out_ws.columns:
+        max_len = 0
+        col_letter = col[0].column_letter
+        for cell in col:
+            val = str(cell.value) if cell.value is not None else ""
+            max_len = max(max_len, len(val))
+        out_ws.column_dimensions[col_letter].width = min(max_len + 3, 50)
 
     out_wb.save(args.output)
     print("Ferdig:", args.output)
