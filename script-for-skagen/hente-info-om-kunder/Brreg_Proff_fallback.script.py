@@ -17,6 +17,7 @@ except ImportError:
     import json
 
 from openpyxl import Workbook, load_workbook
+from openpyxl.styles import numbers
 
 DEFAULT_TIMEOUT = 20
 
@@ -227,6 +228,43 @@ def fetch_styreleder_from_proff(orgnr, timeout):
     return "", "", html
 
 
+def _find_proff_profile_path(orgnr, timeout):
+    """Return the Proff profile path (e.g. /selskap/...) for an orgnr."""
+    search_url = f"https://www.proff.no/bransjes%C3%B8k?q={orgnr}"
+    html = http_get_text(search_url, timeout=timeout)
+    m = re.search(r'href="(/selskap/[^"]+)"', html)
+    return m.group(1) if m else ""
+
+
+def fetch_proff_regnskap(orgnr, timeout):
+    """Fetch Sum Kasse/Bank/Post (KBPS) and Sum investeringer (SIV) from Proff regnskap page."""
+    try:
+        profile_path = _find_proff_profile_path(orgnr, timeout)
+        if not profile_path:
+            return None, None
+        regnskap_url = "https://www.proff.no" + profile_path.replace("/selskap/", "/regnskap/")
+        html = http_get_text(regnskap_url, timeout=timeout)
+
+        # The page embeds JSON with {"code":"KBPS","amount":"..."} entries
+        # for multiple years. The first match is the most recent year.
+        kbps, siv = None, None
+        for m in re.finditer(r'"code"\s*:\s*"(KBPS|SIV)"\s*,\s*"amount"\s*:\s*"([^"]*?)"', html):
+            code, amount = m.group(1), m.group(2)
+            try:
+                val = int(amount) * 1000
+            except (ValueError, TypeError):
+                val = None
+            if code == "KBPS" and kbps is None:
+                kbps = val
+            elif code == "SIV" and siv is None:
+                siv = val
+            if kbps is not None and siv is not None:
+                break
+        return kbps, siv
+    except Exception:
+        return None, None
+
+
 def fetch_primary_contact(orgnr, timeout):
     name, role, regnskapsforer = "", "", ""
     proff_html = None
@@ -255,7 +293,9 @@ def fetch_primary_contact(orgnr, timeout):
     except Exception:
         pass
 
-    return name, role, telefon, adresse, postnr, poststed, regnskapsforer
+    sum_kasse_bank, sum_investeringer = fetch_proff_regnskap(orgnr, timeout)
+
+    return name, role, telefon, adresse, postnr, poststed, regnskapsforer, sum_kasse_bank, sum_investeringer
 
 
 def set_hyperlink(cell, text, url):
@@ -301,6 +341,8 @@ def main():
         "Postnr",
         "Poststed",
         "Regnskapsfører",
+        "Sum Kasse/Bank/Post",
+        "Sum investeringer",
         "Proff",
         "1881",
         "LinkedIn",
@@ -314,25 +356,33 @@ def main():
         orgnr = safe(row[1] if len(row) > 1 else "")
 
         navn, rolle, telefon, adresse, postnr, poststed, regnskapsforer = "", "", "", "", "", "", ""
+        sum_kasse_bank, sum_investeringer = None, None
 
         if orgnr:
-            navn, rolle, telefon, adresse, postnr, poststed, regnskapsforer = fetch_primary_contact(orgnr, args.timeout)
+            navn, rolle, telefon, adresse, postnr, poststed, regnskapsforer, sum_kasse_bank, sum_investeringer = fetch_primary_contact(orgnr, args.timeout)
 
-        out_ws.append([selskap, orgnr, navn, rolle, telefon, adresse, postnr, poststed, regnskapsforer, "Proff", "1881", "LinkedIn"])
+        out_ws.append([selskap, orgnr, navn, rolle, telefon, adresse, postnr, poststed, regnskapsforer, sum_kasse_bank, sum_investeringer, "Proff", "1881", "LinkedIn"])
         r = out_ws.max_row
+
+        # Format financial columns as accounting
+        ACCT_FMT = '#,##0 kr;-#,##0 kr'
+        for col in (10, 11):
+            cell = out_ws.cell(r, col)
+            if cell.value is not None:
+                cell.number_format = ACCT_FMT
 
         if orgnr:
             set_hyperlink(
-                out_ws.cell(r, 10),
+                out_ws.cell(r, 12),
                 "Proff",
                 f"https://www.proff.no/bransjes%C3%B8k?q={orgnr}",
             )
 
         if navn:
             q = quote_plus(navn)
-            set_hyperlink(out_ws.cell(r, 11), "1881", f"https://www.1881.no/?query={q}")
+            set_hyperlink(out_ws.cell(r, 13), "1881", f"https://www.1881.no/?query={q}")
             set_hyperlink(
-                out_ws.cell(r, 12),
+                out_ws.cell(r, 14),
                 "LinkedIn",
                 f"https://www.linkedin.com/search/results/all/?keywords={q}",
             )
