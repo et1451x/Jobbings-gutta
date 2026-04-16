@@ -22,10 +22,7 @@ python c:\scripts\Brreg_Proff_fallback.script.py --input c:\kunder\ebbekunder.xl
 NB!
 skriptet tror at første rad er overerskrifter, så god vane er at overskrit i input fil er
 
-Selskap	        orgnr
-BENDIKS AS	    988742163
-PROCEDO NOR AS	989396749
-osv
+![Eksempel på --input fil kunde xlsx](script-for-skagen/hente-info-om-kunder/xlsinput.png)
 
 
 
