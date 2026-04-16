@@ -22,7 +22,7 @@ python c:\scripts\Brreg_Proff_fallback.script.py --input c:\kunder\ebbekunder.xl
 NB!
 skriptet tror at første rad er overerskrifter, så god vane er at overskrit i input fil er
 
-![Eksempel på --input fil kunde xlsx](script-for-skagen/hente-info-om-kunder/xlsinput.png)
+![Eksempel på --input fil kunde xlsx](script-for-skagen/hente-info-om-kunder/xlsxinput.png)
 
 
 
