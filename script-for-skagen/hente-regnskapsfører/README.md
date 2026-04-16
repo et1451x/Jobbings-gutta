@@ -1,4 +1,4 @@
-Litt mer knask for Skagen Gutta
+Litt mer knask for Skagen Gutta.
 Last ned fra mappen script-for-skagen/hente-regnskapsfører/Regnskapsfører_alle_kunder_xlsx.py
 
 Hvor enn du lagrer filen
