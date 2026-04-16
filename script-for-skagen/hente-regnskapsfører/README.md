@@ -1,37 +1,25 @@
-Litt diverse jobb knask for Skagen Gutta
-Last ned fra mappen script-for-skagen/hente-info-om-kunder/Brreg_Proff_fallback.script.py
+Litt mer knask for Skagen Gutta
+Last ned fra mappen script-for-skagen/hente-regnskapsfører/Regnskapsfører_alle_kunder_xlsx.py
 
 Hvor enn du lagrer filen
-kjør python --input sti til filnavn --output stig og filnavn.xlsx
+kjør 
+python Regnskapsfører_alle_kunder_xlsx.py --input <orgnr> --output <filnavn.xlsx>
 
-feks:
 
-Du laster ned Brreg_Proff_fallback.script.py til en mappe:
+
+Du laster ned Regnskapsfører_alle_kunder_xlsx.py til en mappe:
 feks: 
-c:\scripts\Brreg_Proff_fallback.script.py
-Du har lagret kundelisten
-feks
-c:\kunder\ebbekunder.xlsx
+ c:\scripts\Regnskapsfører_alle_kunder_xlsx.py
 
-start cmd
-python c:\scripts\Brreg_Proff_fallback.script.py --input c:\kunder\ebbekunder.xlsx --output c:\kunder\ebbekunderresultat.xlsx
+kjør
+ python c:\scripts\Regnskapsfører_alle_kunder_xlsx.py --input <orgnr> --output <filnavn.xlsx>
+orgnr= orgnr på det selskap som er regnskapsfører.
 
-hvis du vil feks bare ta de 5 første kundene er konmmandoen
-python c:\scripts\Brreg_Proff_fallback.script.py --input c:\kunder\ebbekunder.xlsx --output ebbekunderresultat.xlsx --limit 5
+eksempel:
+python c:\scripts\Regnskapsfører_alle_kunder_xlsx.py --input 950836792 --output c:\kunder\test1.xlsx
 
-NB!
-skriptet tror at første rad er overerskrifter, så god vane er at overskrit i input fil er
+den viser så test1.xlsx som lsiter alle selskapene som org.nr 950836792
 
-![Eksempel på --input fil kunde xlsx](script-for-skagen/hente-info-om-kunder/xlsxinput.png)
+NB 2 fliker i xlsx Kunder og Oppsummering
 
 
-
-scriptet kjører og viser fremdrift:
-Henter 
-1/125
-2/125
-osv
-
-resultat
-
-![Eksempel på resultat](script-for-skagen/hente-info-om-kunder/resultat.png)
