@@ -22,25 +22,30 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 
 DEFAULT_TIMEOUT = 20
 
+_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
+
 
 def http_get_text(url, timeout=DEFAULT_TIMEOUT):
     if requests is not None:
-        response = requests.get(url, timeout=timeout, headers={"User-Agent": "Mozilla/5.0"})
+        response = requests.get(url, timeout=timeout, headers=_HEADERS)
         response.raise_for_status()
         return response.text
 
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    req = urllib.request.Request(url, headers=_HEADERS)
     with urllib.request.urlopen(req, timeout=timeout) as response:
         return response.read().decode("utf-8", errors="replace")
 
 
 def http_get_json(url, timeout=DEFAULT_TIMEOUT):
     if requests is not None:
-        response = requests.get(url, timeout=timeout, headers={"User-Agent": "Mozilla/5.0"})
+        response = requests.get(url, timeout=timeout, headers=_HEADERS)
         response.raise_for_status()
         return response.json()
 
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    req = urllib.request.Request(url, headers=_HEADERS)
     with urllib.request.urlopen(req, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
 
