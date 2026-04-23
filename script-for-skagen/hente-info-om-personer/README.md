@@ -21,9 +21,9 @@ For hvert unike organisasjonsnummer som ble funnet, hentes ytterligere data:
 | **Brreg Enhetsregisteret** | Selskapsnavn, adresse, postnr, poststed, fylke |
 | **Brreg Roller-API** | Kontaktperson (daglig leder/styreleder), regnskapsfører |
 | **Brreg Regnskapsregisteret** | Driftsinntekter, årsresultat |
-| **Proff.no** (via Playwright) | Telefonnummer, Sum Kasse/Bank/Post (KBPS), Sum investeringer (SIV) |
+| **Proff.no** (via HTTP) | Telefonnummer, Sum Kasse/Bank/Post (KBPS), Sum investeringer (SIV) |
 
-Proff.no rendres med JavaScript (via Playwright headless browser) fordi siden ikke returnerer data via vanlige HTTP-forespørsler.
+Proff.no hentes via HTTP med full User-Agent-header (søk → profilside → regnskapsside).
 
 ### 5. Skriv resultat til Excel
 Output-filen inneholder to ark:
@@ -33,15 +33,11 @@ Output-filen inneholder to ark:
 ## Installasjon
 
 ```bash
-pip install openpyxl requests tqdm playwright
-playwright install chromium
+pip install openpyxl requests tqdm
 ```
 
-> **Anbefalt:** Installer også `tqdm` for å se en fremdriftslinje under søk i totalbestanden:
-> ```bash
-> pip install tqdm
-> ```
-> Uten `tqdm` fungerer scriptet helt fint, men du ser ikke hvor langt søket har kommet. Uten Playwright vil scriptet fortsatt fungere, men hopper over telefon, KBPS og SIV fra Proff.
+> **Anbefalt:** `tqdm` gir en fremdriftslinje under søk i totalbestanden.
+> Uten `tqdm` fungerer scriptet helt fint, men du ser ikke hvor langt søket har kommet.
 
 ## Bruk
 
@@ -109,4 +105,4 @@ Navnene matches med **eksakt sett-likhet** — alle navnedeler må være identis
 - Kun personer med aktive roller i Enhetsregisteret gir treff. Historiske roller (fratrådt/avregistrert) filtreres bort.
 - KBPS/SIV-verdier fra Proff er oppgitt i hele tusen og multipliseres med 1000 i output.
 - Noen mindre selskaper mangler regnskap på Proff og/eller i Brreg regnskapsregisteret.
-- Proff-scraping bruker Playwright og tar noe lenger tid (~3 sidevisninger per selskap).
+- Proff-scraping gjøres via HTTP (~3 forespørsler per selskap: søk, profil, regnskap).

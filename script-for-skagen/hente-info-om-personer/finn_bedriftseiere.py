@@ -14,11 +14,6 @@ except ImportError:
     tqdm = None
 
 try:
-    from playwright.sync_api import sync_playwright
-except ImportError:
-    sync_playwright = None
-
-try:
     import requests
 except ImportError:
     requests = None
@@ -31,9 +26,14 @@ DEFAULT_TIMEOUT = 20
 TOTALBESTAND_FILE = "roller_totalbestand.json.gz"
 TOTALBESTAND_URL = "https://data.brreg.no/enhetsregisteret/api/roller/totalbestand"
 
+_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
+
 
 def http_get_json(url, timeout=DEFAULT_TIMEOUT):
-    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+    headers = {**_HEADERS, "Accept": "application/json"}
     if requests is not None:
         response = requests.get(url, timeout=timeout, headers=headers)
         response.raise_for_status()
@@ -75,12 +75,11 @@ def normalize_space(text):
 
 
 def http_get_text(url, timeout=DEFAULT_TIMEOUT):
-    headers = {"User-Agent": "Mozilla/5.0"}
     if requests is not None:
-        response = requests.get(url, timeout=timeout, headers=headers)
+        response = requests.get(url, timeout=timeout, headers=_HEADERS)
         response.raise_for_status()
         return response.text
-    req = urllib.request.Request(url, headers=headers)
+    req = urllib.request.Request(url, headers=_HEADERS)
     with urllib.request.urlopen(req, timeout=timeout) as response:
         return response.read().decode("utf-8", errors="replace")
 
@@ -191,16 +190,13 @@ def _extract_phone_from_html(html):
     return ""
 
 
-def _fetch_proff_data(orgnr, timeout, browser_page=None):
-    """Hent telefon, KBPS og SIV fra Proff via Playwright (søk -> profil -> regnskap)."""
+def _fetch_proff_data(orgnr, timeout):
+    """Hent telefon, KBPS og SIV fra Proff via HTTP (søk -> profil -> regnskap)."""
     telefon, kbps, siv = "", None, None
-    if browser_page is None:
-        return telefon, kbps, siv
     try:
         # Steg 1: Søk etter selskapet for å finne profil-URL
         search_url = f"https://www.proff.no/bransjes%C3%B8k?q={orgnr}"
-        browser_page.goto(search_url, wait_until="networkidle", timeout=timeout * 1000)
-        html = browser_page.content()
+        html = http_get_text(search_url, timeout=timeout)
         m = re.search(r'href="(/selskap/[^"]+)"', html)
         if not m:
             return telefon, kbps, siv
@@ -208,14 +204,12 @@ def _fetch_proff_data(orgnr, timeout, browser_page=None):
 
         # Steg 2: Gå til profil-siden for å hente telefon
         profile_url = "https://www.proff.no" + profile_path
-        browser_page.goto(profile_url, wait_until="networkidle", timeout=timeout * 1000)
-        html = browser_page.content()
+        html = http_get_text(profile_url, timeout=timeout)
         telefon = _extract_phone_from_html(html)
 
         # Steg 3: Gå til regnskap-siden for KBPS og SIV
         regnskap_url = "https://www.proff.no" + profile_path.replace("/selskap/", "/regnskap/")
-        browser_page.goto(regnskap_url, wait_until="networkidle", timeout=timeout * 1000)
-        html = browser_page.content()
+        html = http_get_text(regnskap_url, timeout=timeout)
 
         for m in re.finditer(r'"code"\s*:\s*"(KBPS|SIV)"\s*,\s*"amount"\s*:\s*"([^"]*?)"', html):
             code, amount = m.group(1), m.group(2)
@@ -250,7 +244,7 @@ def _fetch_brreg_regnskap(orgnr, timeout):
         return None, None
 
 
-def fetch_all_details(orgnr, timeout=DEFAULT_TIMEOUT, browser_page=None):
+def fetch_all_details(orgnr, timeout=DEFAULT_TIMEOUT):
     """Hent all info om et selskap: navn, adresse, fylke, kontaktperson, telefon, regnskapsfører, regnskap."""
     details = {
         "navn": "", "adresse": "", "postnr": "", "poststed": "", "fylke": "",
@@ -283,8 +277,8 @@ def fetch_all_details(orgnr, timeout=DEFAULT_TIMEOUT, browser_page=None):
     except Exception:
         pass
 
-    # 3. Hent telefon, KBPS og SIV fra Proff (via Playwright)
-    telefon, kbps, siv = _fetch_proff_data(orgnr, timeout, browser_page)
+    # 3. Hent telefon, KBPS og SIV fra Proff
+    telefon, kbps, siv = _fetch_proff_data(orgnr, timeout)
     details["telefon"] = telefon
     details["sum_kasse_bank"] = kbps
     details["sum_investeringer"] = siv
@@ -308,39 +302,12 @@ def enrich_results_with_details(results, person_names):
 
     print(f"Henter detaljer for {len(unique_orgnr)} selskap(er) fra Brreg/Proff...")
 
-    # Start Playwright-nettleser for Proff-scraping
-    pw_context = None
-    browser = None
-    browser_page = None
-    if sync_playwright is not None:
-        try:
-            pw_context = sync_playwright().__enter__()
-            browser = pw_context.chromium.launch(headless=True)
-            browser_page = browser.new_page()
-            print("  (Playwright-nettleser startet for Proff-henting)")
-        except Exception as e:
-            print(f"  Advarsel: Kunne ikke starte Playwright ({e}), hopper over Proff-regnskap")
-    else:
-        print("  Advarsel: Playwright ikke installert, hopper over Proff-regnskap")
-
     details_cache = {}
     for i, orgnr in enumerate(unique_orgnr, 1):
         print(f"\r  {i}/{len(unique_orgnr)}: {orgnr}", end="", flush=True)
-        details_cache[orgnr] = fetch_all_details(orgnr, browser_page=browser_page)
+        details_cache[orgnr] = fetch_all_details(orgnr)
         time.sleep(0.3)
     print()
-
-    # Lukk Playwright
-    if browser is not None:
-        try:
-            browser.close()
-        except Exception:
-            pass
-    if pw_context is not None:
-        try:
-            pw_context.__exit__(None, None, None)
-        except Exception:
-            pass
 
     for name in person_names:
         for comp in results.get(name, []):
