@@ -214,7 +214,7 @@ def _fetch_proff_data(orgnr, timeout):
         for m in re.finditer(r'"code"\s*:\s*"(KBPS|SIV)"\s*,\s*"amount"\s*:\s*"([^"]*?)"', html):
             code, amount = m.group(1), m.group(2)
             try:
-                val = int(amount) * 1000
+                val = int(amount)
             except (ValueError, TypeError):
                 val = None
             if code == "KBPS" and kbps is None:

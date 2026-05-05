@@ -2,6 +2,8 @@
 
 Script som tar en kundeliste med selskapsnavn og organisasjonsnummer fra en Excel-fil, og beriker den med kontaktperson, telefon, adresse, regnskapsfører og regnskapsdata. Resultatet er en ferdig Excel-fil med klikkbare lenker.
 
+Det finnes også et lite HTTP-API i samme mappe hvis du kun vil slå opp ett organisasjonsnummer om gangen.
+
 ## Hvordan det fungerer
 
 ### 1. Les kundeliste fra input-fil
@@ -40,6 +42,32 @@ pip install openpyxl requests
 > Uten `tqdm` vises fremdrift som `1/125`, `2/125` osv.
 
 ## Bruk
+
+### Start API for org.nr-oppslag
+
+```bash
+python orgnr_api.py --port 8000
+```
+
+Eksempel på kall:
+
+```bash
+curl "http://localhost:8000/lookup?orgnr=988742163"
+```
+
+Tilgjengelige endepunkt:
+
+| Endepunkt | Beskrivelse |
+|---|---|
+| `GET /lookup?orgnr=...` | Returnerer JSON med selskapsnavn, kontaktperson, telefon, adresse, regnskapsfører og regnskap (`driftsinntekter`, `aarsresultat`, `KBPS`, `SIV`). Ved flere org.nr returneres `count`, `results` og `errors`. |
+| `GET /lookup-html?orgnr=...` | Returnerer en HTML-resultatside med klikkbare lenker til Proff, Brreg, 1881 og LinkedIn. Ved flere org.nr vises en batch-tabell. |
+| `GET /health` | Enkel helsesjekk |
+
+Du kan sende flere org.nr i samme query med komma, mellomrom eller linjeskift, for eksempel:
+
+```bash
+curl "http://localhost:8000/lookup?orgnr=979484534,988742163"
+```
 
 ### Forbered input-fil
 Lag en Excel-fil med selskapsnavn i kolonne A og organisasjonsnummer i kolonne B. Rad 1 er overskrifter:
@@ -84,8 +112,8 @@ python Brreg_Proff_fallback.script.py --input ebbekunder.xlsx --output resultat.
 | 8 | Poststed | Poststed |
 | 9 | Fylke | Fylke (utledet fra kommunenummer) |
 | 10 | Regnskapsfører | Regnskapsførerselskapet fra Brreg |
-| 11 | Sum Kasse/Bank/Post | Fra Proff.no (KBPS × 1000) |
-| 12 | Sum investeringer | Fra Proff.no (SIV × 1000) |
+| 11 | Sum Kasse/Bank/Post | Fra Proff.no (KBPS) |
+| 12 | Sum investeringer | Fra Proff.no (SIV) |
 | 13 | Proff | Lenke til Proff.no |
 | 14 | 1881 | Lenke til 1881-søk på kontaktperson |
 | 15 | LinkedIn | Lenke til LinkedIn-søk på kontaktperson |
@@ -93,5 +121,5 @@ python Brreg_Proff_fallback.script.py --input ebbekunder.xlsx --output resultat.
 ## Begrensninger
 
 - Proff.no bruker JavaScript-rendering. HTTP-scraping fungerer for telefon og regnskap, men kan gi tomme resultater for noen selskaper.
-- KBPS/SIV-verdier fra Proff er oppgitt i hele tusen og multipliseres med 1000 i output.
+- KBPS/SIV-verdier fra Proff brukes direkte uten ekstra multiplikasjon.
 - Noen selskaper mangler regnskap på Proff (f.eks. nyregistrerte eller ENK).

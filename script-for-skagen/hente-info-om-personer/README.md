@@ -89,8 +89,8 @@ python finn_bedriftseiere.py --input mine_navn.xlsx --output resultat.xlsx
 | 13 | Regnskapsfører | Regnskapsførerselskapet |
 | 14 | Driftsinntekter | Siste år, fra Brreg regnskapsregisteret |
 | 15 | Årsresultat | Siste år, fra Brreg regnskapsregisteret |
-| 16 | Sum Kasse/Bank/Post | Siste år, fra Proff.no (KBPS × 1000) |
-| 17 | Sum investeringer | Siste år, fra Proff.no (SIV × 1000) |
+| 16 | Sum Kasse/Bank/Post | Siste år, fra Proff.no (KBPS) |
+| 17 | Sum investeringer | Siste år, fra Proff.no (SIV) |
 | 18 | Proff | Lenke til Proff.no |
 | 19 | Brreg | Lenke til Brreg virksomhetsoppslag |
 | 20 | 1881 | Lenke til 1881-søk på kontaktperson |
@@ -103,6 +103,6 @@ Navnene matches med **eksakt sett-likhet** — alle navnedeler må være identis
 ## Begrensninger
 
 - Kun personer med aktive roller i Enhetsregisteret gir treff. Historiske roller (fratrådt/avregistrert) filtreres bort.
-- KBPS/SIV-verdier fra Proff er oppgitt i hele tusen og multipliseres med 1000 i output.
+- KBPS/SIV-verdier fra Proff brukes direkte uten ekstra multiplikasjon.
 - Noen mindre selskaper mangler regnskap på Proff og/eller i Brreg regnskapsregisteret.
 - Proff-scraping gjøres via HTTP (~3 forespørsler per selskap: søk, profil, regnskap).

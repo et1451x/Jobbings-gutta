@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Presentasjon: Hva jeg har laget</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3ecdf;
+      --paper: rgba(255, 250, 241, 0.82);
+      --paper-strong: rgba(255, 248, 236, 0.96);
+      --ink: #1f1a17;
+      --muted: #665b53;
+      --line: rgba(72, 52, 38, 0.12);
+      --accent: #0d6b63;
+      --accent-soft: rgba(13, 107, 99, 0.14);
+      --signal: #bd6f2e;
+      --shadow: 0 28px 90px rgba(41, 25, 14, 0.14);
+      --radius: 28px;
+      --body-font: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      --title-font: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(13, 107, 99, 0.22), transparent 32%),
+        radial-gradient(circle at 85% 15%, rgba(189, 111, 46, 0.16), transparent 22%),
+        linear-gradient(135deg, #efe5d7 0%, #f8f4ed 38%, #ece0d0 100%);
+      color: var(--ink);
+      font-family: var(--body-font);
+      overflow: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      width: 38vmax;
+      height: 38vmax;
+      border-radius: 50%;
+      filter: blur(50px);
+      pointer-events: none;
+      opacity: 0.42;
+      z-index: 0;
+    }
+
+    body::before {
+      left: -10vmax;
+      bottom: -14vmax;
+      background: rgba(13, 107, 99, 0.12);
+    }
+
+    body::after {
+      right: -8vmax;
+      top: -12vmax;
+      background: rgba(189, 111, 46, 0.12);
+    }
+
+    .deck {
+      position: relative;
+      z-index: 1;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.8fr);
+      gap: 28px;
+      padding: 5.5vh 5vw 10vh;
+      align-items: stretch;
+      opacity: 0;
+      transform: translateX(48px) scale(0.985);
+      transition: opacity 320ms ease, transform 320ms ease;
+      pointer-events: none;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .panel,
+    .aside {
+      backdrop-filter: blur(16px);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel {
+      padding: 42px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 0;
+    }
+
+    .aside {
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: var(--paper-strong);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.86rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--signal);
+      box-shadow: 0 0 0 4px rgba(189, 111, 46, 0.15);
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--title-font);
+      font-weight: 700;
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 6vw, 6.4rem);
+      max-width: 10ch;
+      margin-top: 22px;
+    }
+
+    h2 {
+      font-size: clamp(2.3rem, 4vw, 4.2rem);
+      margin: 18px 0 18px;
+      max-width: 13ch;
+    }
+
+    h3 {
+      font-size: 1.4rem;
+      margin-bottom: 10px;
+    }
+
+    p,
+    li {
+      font-size: clamp(1rem, 1.35vw, 1.22rem);
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .lead {
+      font-size: clamp(1.18rem, 1.75vw, 1.6rem);
+      color: var(--ink);
+      max-width: 38ch;
+      line-height: 1.45;
+    }
+
+    .grid-2,
+    .metric-grid,
+    .cards {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 26px;
+    }
+
+    .metric-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 28px;
+    }
+
+    .cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 20px;
+    }
+
+    .card,
+    .metric,
+    .mini-note,
+    .note-box,
+    .timeline-item {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.58);
+    }
+
+    .card,
+    .timeline-item {
+      padding: 18px 18px 16px;
+    }
+
+    .metric {
+      padding: 18px;
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric strong {
+      display: block;
+      font-family: var(--title-font);
+      font-size: clamp(2rem, 3vw, 3rem);
+      color: var(--ink);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .note-box,
+    .mini-note {
+      padding: 18px;
+    }
+
+    .label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    ul {
+      margin: 16px 0 0;
+      padding-left: 22px;
+    }
+
+    .checklist {
+      list-style: none;
+      padding: 0;
+      margin: 18px 0 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .checklist li {
+      position: relative;
+      padding-left: 30px;
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .checklist li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.48em;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #13927b);
+      box-shadow: 0 0 0 5px rgba(13, 107, 99, 0.09);
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .page {
+      color: var(--ink);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .aside-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .aside-top strong {
+      font-size: 1.1rem;
+      color: var(--ink);
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(13, 107, 99, 0.08);
+      border: 1px solid rgba(13, 107, 99, 0.12);
+      color: var(--ink);
+      font-size: 0.95rem;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-item strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 8px;
+      font-size: 1.02rem;
+    }
+
+    .nav {
+      position: fixed;
+      left: 5vw;
+      right: 5vw;
+      bottom: 3vh;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .nav-group,
+    .dot-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font: inherit;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #0b8172);
+      box-shadow: 0 18px 36px rgba(13, 107, 99, 0.22);
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+
+    button.secondary {
+      color: var(--ink);
+      background: rgba(255, 248, 236, 0.9);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(31, 26, 23, 0.18);
+      border: none;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .dot.active {
+      background: var(--signal);
+      transform: scale(1.15);
+    }
+
+    .help {
+      position: fixed;
+      top: 2vh;
+      right: 2vw;
+      z-index: 5;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 250, 241, 0.72);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.9rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .speaker-note {
+      font-size: 0.95rem;
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    .speaker-note strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 1024px) {
+      body {
+        overflow: auto;
+      }
+
+      .deck {
+        height: auto;
+      }
+
+      .slide {
+        position: relative;
+        inset: auto;
+        min-height: 100vh;
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+        grid-template-columns: 1fr;
+        padding-bottom: 18vh;
+      }
+
+      .slide:not(.active) {
+        display: none;
+      }
+
+      .metric-grid,
+      .cards,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        padding: 12px;
+        border-radius: 24px;
+        background: rgba(255, 250, 241, 0.92);
+        border: 1px solid var(--line);
+        backdrop-filter: blur(12px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="help">Pil venstre/høyre eller knappene nederst</div>
+
+  <main class="deck" aria-label="Presentasjon om hva jeg har laget">
+    <section class="slide active" data-title="Forside">
+      <article class="panel">
+        <div>
+          <span class="eyebrow">Skagen-leveranser</span>
+          <h1>Dette har jeg laget for avdelingen</h1>
+          <p class="lead">Jeg har bygget praktiske verktøy som henter selskapsdata, finner eierskap og kartlegger kundemasser direkte fra Brreg og Proff, og leverer resultatet klart i Excel eller via et enkelt API.</p>
+          <div class="metric-grid">
+            <div class="metric">
+              <span class="label">Hovedspor</span>
+              <strong>3</strong>
+              <p>Kundeinfo, bedriftseiere og regnskapsfører-kunder.</p>
+            </div>
+            <div class="metric">
+              <span class="label">Datakilder</span>
+              <strong>Brreg + Proff</strong>
+              <p>Offentlige registre kombinert med berikelse og fallback-logikk.</p>
+            </div>
+            <div class="metric">
+              <span class="label">Leveranseform</span>
+              <strong>Excel + API</strong>
+              <p>Klar til bruk i arbeidsflyt, ikke bare som råkode.</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Presentasjon basert på det som ligger i repoet per i dag</span>
+          <span class="page">01 / 07</span>
+        </div>
+      </article>
+      <aside class="aside">
+        <div class="aside-top">
+          <strong>Hva jeg vil vise</strong>
+          <span class="label">Oversikt</span>
+        </div>
+        <ul class="checklist">
+          <li>Hvilke problemer jeg faktisk har automatisert</li>
+          <li>Hva hvert script leverer i praksis</li>
+          <li>Hvordan jeg har bygget fallback, caching og berikelse</li>
+          <li>Hvilken verdi dette gir internt</li>
+        </ul>
+        <div class="note-box speaker-note">
+          <strong>Snakkepunkt</strong>
+          Dette er en kort status på hva jeg har laget, ikke en teknisk deep dive. Fokuset er nytte, automatisering og hva avdelingen kan bruke videre.
+        </div>
+      </aside>
+    </section>
+
+    <section class="slide" data-title="Problemet">
+      <article class="panel">
+        <div>
+          <span class="eyebrow">Utgangspunkt</span>
+          <h2>Jeg har automatisert oppgaver som ellers er manuelle og tidkrevende</h2>
+          <p class="lead">Mye av behovet handler om å finne riktige personer, selskapsinfo og relasjoner raskt, og få det ut i et format som faktisk kan brukes videre.</p>
+          <div class="cards">
+            <div class="card">
+              <h3>Kundeberikelse</h3>
+              <p>Fra en enkel kundeliste med org.nr til kontaktperson, telefon, adresse, regnskapsfører og regnskapstall.</p>
+            </div>
+            <div class="card">
+              <h3>Personsøk</h3>
+              <p>Fra navn i et ark til oversikt over hvilke selskaper personen har aktive roller i.</p>
+            </div>
+            <div class="card">
+              <h3>Regnskapsfører-kartlegging</h3>
+              <p>Fra ett org.nr til en strukturert kundeliste med status på relasjonene.</p>
+            </div>
+            <div class="card">
+              <h3>Delbar bruk</h3>
+              <p>Ikke bare CLI-script, men også et lite HTTP-API for raske enkeltoppslag.</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Fellesnevner: mindre manuell leting, mer direkte beslutningsgrunnlag</span>
+          <span class="page">02 / 07</span>
+        </div>
+      </article>
+      <aside class="aside">
+        <div class="mini-note">
+          <span class="label">Kort versjon</span>
+          <p>Jeg har laget verktøy som flytter arbeid fra oppslag for hånd til repeterbar datainnhenting.</p>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <strong>Input</strong>
+            <p>Excel med kunder, Excel med navn, eller ett org.nr.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>Bearbeiding</strong>
+            <p>API-kall, scraping, navnematching, filtrering av aktive roller og klassifisering av status.</p>
+          </div>
+          <div class="timeline-item">
+            <strong>Output</strong>
+            <p>Ferdige Excel-filer, klikkbare lenker og et API-oppslag som kan brukes direkte.</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="slide" data-title="Kundeinfo">
+      <article class="panel">
+        <div>
+          <span class="eyebrow">Leveranse 1</span>
+          <h2>Berikelse av kundelister fra Excel</h2>
+          <p class="lead">Jeg har laget et script som tar en kundeliste med selskapsnavn og organisasjonsnummer, og returnerer en ferdig beriket Excel-fil med kontaktpunkter og selskapsdata.</p>
+          <ul>
+            <li>Henter kontaktperson fra Brreg og prioriterer kontaktperson, daglig leder og deretter styreleder.</li>
+            <li>Bruker Proff som fallback hvis Brreg ikke gir god nok personinfo.</li>
+            <li>Beriker med telefon, adresse, fylke, regnskapsforer og regnskapstall.</li>
+            <li>Lager klikkbare lenker til Proff, 1881 og LinkedIn direkte i output.</li>
+          </ul>
+          <div class="grid-2">
+            <div class="note-box">
+              <span class="label">Praktisk effekt</span>
+              <p>Dette reduserer tiden fra kundeliste til bearbeidbar kontaktliste betydelig.</p>
+            </div>
+            <div class="note-box">
+              <span class="label">Ekstra leveranse</span>
+              <p>Samme logikk er også gjort tilgjengelig i et lite HTTP-API for enkeltoppslag på ett eller flere org.nr.</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Input: Excel. Output: Excel eller API-svar.</span>
+          <span class="page">03 / 07</span>
+        </div>
+      </article>
+      <aside class="aside">
+        <div class="aside-top">
+          <strong>Datakilder og logikk</strong>
+          <span class="label">Detalj</span>
+        </div>
+        <div class="pill-row">
+          <span class="pill">Brreg Enhetsregisteret</span>
+          <span class="pill">Brreg Roller-API</span>
+          <span class="pill">Brreg Regnskapsregisteret</span>
+          <span class="pill">Proff.no</span>
+        </div>
+        <div class="note-box speaker-note">
+          <strong>Snakkepunkt</strong>
+          Her er poenget ikke bare at jeg henter data, men at jeg har sydd sammen flere kilder og lagt inn fallback slik at output blir nyttig selv når en kilde mangler noe.
+        </div>
+      </aside>
+    </section>
+
+    <section class="slide" data-title="Bedriftseiere">
+      <article class="panel">
+        <div>
+          <span class="eyebrow">Leveranse 2</span>
+          <h2>Oppslag på personer for å finne selskapsroller og eierspor</h2>
+          <p class="lead">Jeg har laget et script som starter med personnavn og finner hvilke norske selskaper de har aktive roller i, med videre berikelse på selskapsnivå.</p>
+          <div class="metric-grid">
+            <div class="metric">
+              <span class="label">Kildegrunnlag</span>
+              <strong>~1.1M</strong>
+              <p>Enheter i Brregs totalbestand blir søkt gjennom for aktive roller.</p>
+            </div>
+            <div class="metric">
+              <span class="label">Caching</span>
+              <strong>30 dager</strong>
+              <p>Totalbestanden caches lokalt og lastes bare ned på nytt ved behov.</p>
+            </div>
+            <div class="metric">
+              <span class="label">Output</span>
+              <strong>2 ark</strong>
+              <p>Ett detaljark og ett oppsummeringsark i Excel.</p>
+            </div>
+          </div>
+          <ul>
+            <li>Matcher navn eksakt, men uavhengig av rekkefølge på navnedeler.</li>
+            <li>Filtrerer bort historiske roller som er fratrådt eller avregistrert.</li>
+            <li>Beriker med kontaktperson, telefon, regnskapsfører, driftsinntekter og årsresultat.</li>
+          </ul>
+        </div>
+        <div class="footer">
+          <span>Dette gjør personresearch langt mer systematisk enn manuelle oppslag.</span>
+          <span class="page">04 / 07</span>
+        </div>
+      </article>
+      <aside class="aside">
+        <div class="mini-note">
+          <span class="label">Hvorfor det er nyttig</span>
+          <p>Dette er en effektiv måte å gå fra navn til selskapsrelasjoner og økonomisk kontekst, uten å sjekke hvert selskap enkeltvis.</p>
+        </div>
+        <div class="note-box speaker-note">
+          <strong>Snakkepunkt</strong>
+          Denne delen viser at jeg ikke bare har laget oppslag på selskaper, men også på personer. Det utvider nytten fra rene kundelister til faktisk relasjonskartlegging.
+        </div>
+      </aside>
+    </section>
+
+    <section class="slide" data-title="Regnskapsfører">
+      <article class="panel">
+        <div>
+          <span class="eyebrow">Leveranse 3</span>
+          <h2>Kundeliste for regnskapsførerselskaper</h2>
+          <p class="lead">Jeg har også laget et script som tar organisasjonsnummeret til et regnskapsførerselskap og henter ut alle selskaper det er registrert for i Brreg.</p>
+          <ul>
+            <li>Paginerer automatisk gjennom Brregs roller-API til hele kundemassen er hentet.</li>
+            <li>Klassifiserer hver relasjon som aktiv, fratrådt eller avregistrert.</li>
+            <li>Leverer en Excel-fil med fargekoding, sortering og et eget oppsummeringsark.</li>
+          </ul>
+          <div class="grid-2">
+            <div class="card">
+              <h3>Forretningsnytte</h3>
+              <p>Gir rask oversikt over faktisk kundemasse rundt et regnskapsførermiljø.</p>
+            </div>
+            <div class="card">
+              <h3>Analysegrunnlag</h3>
+              <p>Enklere å skille aktive relasjoner fra historiske eller avsluttede forbindelser.</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Et konkret verktøy for kartlegging av kundeporteføljer.</span>
+          <span class="page">05 / 07</span>
+        </div>
+      </article>
+      <aside class="aside">
+        <div class="aside-top">
+          <strong>Felles mønster i det jeg har laget</strong>
+          <span class="label">Gjennomgående</span>
+        </div>
+        <ul class="checklist">
+          <li>Tar en enkel input</li>
+          <li>Henter data fra flere kilder</li>
+          <li>Vasker og klassifiserer dataene</li>
+          <li>Leverer et format som kan brukes videre med en gang</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="slide" data-title="Teknisk">
+      <article class="panel">
+        <div>
+          <span class="eyebrow">Hvordan jeg har bygget det</span>
+          <h2>Mer enn bare script: robusthet, gjenbruk og tilgjengeliggjøring</h2>
+          <div class="cards">
+            <div class="card">
+              <h3>Fallback-logikk</h3>
+              <p>Når en kilde ikke gir nok data, brukes neste beste kilde i stedet for å stoppe.</p>
+            </div>
+            <div class="card">
+              <h3>Gjenbrukbar kjerne</h3>
+              <p>Felles Brreg/Proff-logikk er trukket ut i delt kode, så samme motor kan brukes flere steder.</p>
+            </div>
+            <div class="card">
+              <h3>API i tillegg til Excel</h3>
+              <p>Org.nr-oppslag kan brukes via HTTP, ikke bare gjennom manuell kjøring av script.</p>
+            </div>
+            <div class="card">
+              <h3>Bruksnære outputs</h3>
+              <p>Autofilter, formatering, lenker og oppsummeringer er en del av leveransen.</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Målet har vært brukbarhet, ikke bare at koden fungerer teknisk.</span>
+          <span class="page">06 / 07</span>
+        </div>
+      </article>
+      <aside class="aside">
+        <div class="note-box">
+          <span class="label">Kort oppsummert</span>
+          <p>Jeg har bygd dette som praktiske interne verktøy med tanke på repeterbarhet, raskere arbeidsflyt og mindre avhengighet av manuelle oppslag.</p>
+        </div>
+        <div class="note-box speaker-note">
+          <strong>Snakkepunkt</strong>
+          Hvis du vil tone det opp litt teknisk, kan du nevne caching av totalbestand, sammensying av flere API-kilder og at samme oppslagslogikk er gjort tilgjengelig både som script og API.
+        </div>
+      </aside>
+    </section>
+
+    <section class="slide" data-title="Avslutning">
+      <article class="panel">
+        <div>
+          <span class="eyebrow">Oppsummert</span>
+          <h2>Det jeg har laget gir raskere oppslag, bedre oversikt og mer bruksklar data</h2>
+          <p class="lead">Kort sagt har jeg laget verktøy som gjør det enklere å finne riktige selskaper, riktige personer og riktige relasjoner, og levere det ut i et format avdelingen kan bruke umiddelbart.</p>
+          <div class="grid-2">
+            <div class="note-box">
+              <span class="label">Det viktigste resultatet</span>
+              <p>Manuell research er gjort om til repeterbar arbeidsflyt.</p>
+            </div>
+            <div class="note-box">
+              <span class="label">Naturlig neste steg</span>
+              <p>Videreutvikle dette til faste arbeidsprosesser, enklere deling og flere målrettede oppslag.</p>
+            </div>
+          </div>
+          <ul class="checklist">
+            <li>Fra råinput til ferdig Excel på få steg</li>
+            <li>Fra navn til selskapsroller og nøkkelinformasjon</li>
+            <li>Fra ett org.nr til kundemasse og statusoversikt</li>
+          </ul>
+        </div>
+        <div class="footer">
+          <span>Kan enkelt tilpasses med navn, dato eller mer konkrete eksempler før presentasjonen.</span>
+          <span class="page">07 / 07</span>
+        </div>
+      </article>
+      <aside class="aside">
+        <div class="mini-note">
+          <span class="label">Avslutt med</span>
+          <p>Jeg har ikke bare testet ideer, men bygget konkrete verktøy som kan brukes videre i avdelingen.</p>
+        </div>
+        <div class="note-box speaker-note">
+          <strong>Snakkepunkt</strong>
+          Hvis du får spørsmål, trekk frem at det meste starter med enkel input og ender som et ferdig beslutningsgrunnlag. Det er den viktigste verdien.
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <nav class="nav" aria-label="Presentasjonskontroller">
+    <div class="nav-group">
+      <button class="secondary" type="button" id="prevBtn">Forrige</button>
+      <button type="button" id="nextBtn">Neste</button>
+    </div>
+    <div class="dot-group" id="dots" aria-label="Slides"></div>
+  </nav>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const dotsContainer = document.getElementById('dots');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    let currentIndex = 0;
+
+    function buildDots() {
+      slides.forEach((slide, index) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'dot';
+        dot.setAttribute('aria-label', `Gå til slide ${index + 1}: ${slide.dataset.title || ''}`);
+        dot.addEventListener('click', () => goTo(index));
+        dotsContainer.appendChild(dot);
+      });
+    }
+
+    function goTo(index) {
+      currentIndex = (index + slides.length) % slides.length;
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle('active', slideIndex === currentIndex);
+      });
+
+      Array.from(dotsContainer.children).forEach((dot, dotIndex) => {
+        dot.classList.toggle('active', dotIndex === currentIndex);
+      });
+    }
+
+    prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
+    nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+        event.preventDefault();
+        goTo(currentIndex + 1);
+      }
+
+      if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+        event.preventDefault();
+        goTo(currentIndex - 1);
+      }
+
+      if (event.key === 'Home') {
+        goTo(0);
+      }
+
+      if (event.key === 'End') {
+        goTo(slides.length - 1);
+      }
+    });
+
+    buildDots();
+    goTo(0);
+  </script>
+</body>
+</html>
