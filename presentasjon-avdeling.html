@@ -294,6 +294,27 @@
       font-size: 0.95rem;
     }
 
+    .meta-strip {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .meta-pill {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.62);
+      color: var(--ink);
+      padding: 8px 12px;
+      font-size: 0.92rem;
+    }
+
+    .meta-pill b {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
     .page {
       color: var(--ink);
       font-weight: 700;
@@ -350,6 +371,35 @@
       align-items: center;
       justify-content: space-between;
       gap: 18px;
+    }
+
+    .nav-center {
+      flex: 1;
+      display: grid;
+      gap: 8px;
+      min-width: 220px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(31, 26, 23, 0.14);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--signal), var(--accent));
+      transition: width 220ms ease;
+    }
+
+    .nav-title {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
     }
 
     .nav-group,
@@ -427,6 +477,40 @@
       font-size: 0.8rem;
     }
 
+    .slide.active .card,
+    .slide.active .metric,
+    .slide.active .note-box,
+    .slide.active .timeline-item {
+      animation: riseIn 460ms ease both;
+    }
+
+    .slide.active .card:nth-of-type(2),
+    .slide.active .metric:nth-of-type(2),
+    .slide.active .timeline-item:nth-of-type(2) {
+      animation-delay: 80ms;
+    }
+
+    .slide.active .card:nth-of-type(3),
+    .slide.active .metric:nth-of-type(3),
+    .slide.active .timeline-item:nth-of-type(3) {
+      animation-delay: 140ms;
+    }
+
+    .slide.active .card:nth-of-type(4) {
+      animation-delay: 180ms;
+    }
+
+    @keyframes riseIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     @media (max-width: 1024px) {
       body {
         overflow: auto;
@@ -467,6 +551,14 @@
         border: 1px solid var(--line);
         backdrop-filter: blur(12px);
       }
+
+      .nav-center {
+        min-width: 120px;
+      }
+
+      .nav-title {
+        font-size: 0.82rem;
+      }
     }
   </style>
 </head>
@@ -480,6 +572,11 @@
           <span class="eyebrow">Skagen-leveranser</span>
           <h1>Dette har jeg laget for avdelingen</h1>
           <p class="lead">Jeg har bygget praktiske verktøy som henter selskapsdata, finner eierskap og kartlegger kundemasser direkte fra Brreg og Proff, og leverer resultatet klart i Excel eller via et enkelt API.</p>
+          <div class="meta-strip">
+            <span class="meta-pill"><b>Navn:</b> Ditt navn</span>
+            <span class="meta-pill"><b>Avdeling:</b> Din avdeling</span>
+            <span class="meta-pill"><b>Dato:</b> <span id="todayDate">05.05.2026</span></span>
+          </div>
           <div class="metric-grid">
             <div class="metric">
               <span class="label">Hovedspor</span>
@@ -582,7 +679,7 @@
           <ul>
             <li>Henter kontaktperson fra Brreg og prioriterer kontaktperson, daglig leder og deretter styreleder.</li>
             <li>Bruker Proff som fallback hvis Brreg ikke gir god nok personinfo.</li>
-            <li>Beriker med telefon, adresse, fylke, regnskapsforer og regnskapstall.</li>
+            <li>Beriker med telefon, adresse, fylke, regnskapsfører og regnskapstall.</li>
             <li>Lager klikkbare lenker til Proff, 1881 og LinkedIn direkte i output.</li>
           </ul>
           <div class="grid-2">
@@ -752,7 +849,7 @@
         <div>
           <span class="eyebrow">Oppsummert</span>
           <h2>Det jeg har laget gir raskere oppslag, bedre oversikt og mer bruksklar data</h2>
-          <p class="lead">Kort sagt har jeg laget verktøy som gjør det enklere å finne riktige selskaper, riktige personer og riktige relasjoner, og levere det ut i et format avdelingen kan bruke umiddelbart.</p>
+          <p class="lead">Kort sagt har jeg laget verktøy som gjør det enklere å finne riktige selskaper, riktige personer og riktige relasjoner, og leverer det ut i et format avdelingen kan bruke umiddelbart.</p>
           <div class="grid-2">
             <div class="note-box">
               <span class="label">Det viktigste resultatet</span>
@@ -792,6 +889,12 @@
       <button class="secondary" type="button" id="prevBtn">Forrige</button>
       <button type="button" id="nextBtn">Neste</button>
     </div>
+    <div class="nav-center">
+      <div class="progress-track" aria-hidden="true">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="nav-title" id="navTitle">Slide 1 av 7</div>
+    </div>
     <div class="dot-group" id="dots" aria-label="Slides"></div>
   </nav>
 
@@ -800,7 +903,19 @@
     const dotsContainer = document.getElementById('dots');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
+    const progressFill = document.getElementById('progressFill');
+    const navTitle = document.getElementById('navTitle');
+    const todayDate = document.getElementById('todayDate');
     let currentIndex = 0;
+
+    function setTodayDate() {
+      if (!todayDate) return;
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      todayDate.textContent = `${day}.${month}.${year}`;
+    }
 
     function buildDots() {
       slides.forEach((slide, index) => {
@@ -822,6 +937,11 @@
       Array.from(dotsContainer.children).forEach((dot, dotIndex) => {
         dot.classList.toggle('active', dotIndex === currentIndex);
       });
+
+      const progress = ((currentIndex + 1) / slides.length) * 100;
+      progressFill.style.width = `${progress}%`;
+      const title = slides[currentIndex].dataset.title || `Slide ${currentIndex + 1}`;
+      navTitle.textContent = `${title} - ${currentIndex + 1} av ${slides.length}`;
     }
 
     prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
@@ -847,6 +967,7 @@
       }
     });
 
+    setTodayDate();
     buildDots();
     goTo(0);
   </script>
